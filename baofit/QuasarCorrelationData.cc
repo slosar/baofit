@@ -49,7 +49,14 @@ local::QuasarCorrelationData *local::QuasarCorrelationData::clone(bool binningOn
     return data;
 }
 
-void local::QuasarCorrelationData::fixCovariance(double ll0, double c0, double c1, double c2) {
+double local::QuasarCorrelationData::_pkmarg(double kmin, double kmax, double l1, double l2) {
+  double f1 (l1==0.0 ? 1.0 : ( sin(kmax*l1)-sin(kmin*l1)  ) / l1);
+  double f2 (l2==0.0 ? 1.0 : ( sin(kmax*l2)-sin(kmin*l2)  ) / l2);
+  return f1*f2;
+
+}
+
+void local::QuasarCorrelationData::fixCovariance(double k1, double k2, double c) {
 
     if (!isCovarianceModifiable()) {
         throw RuntimeError("QuasarCorrelationData::fixCovariance: not modifiable.");
@@ -73,7 +80,7 @@ void local::QuasarCorrelationData::fixCovariance(double ll0, double c0, double c
         int sepIndex(bin[1]), zIndex(bin[2]);
         // Calculate and save the value of ll - ll0 at the center of this bin.
         double ll(llBins->getBinCenter(bin[0]));
-        dll.push_back(ll - ll0);
+        dll.push_back(ll);
         // Loop over unique pairs (iter1,iter2) with iter2 <= iter1 (which does not
         // necessarily imply that i2 <= i1).
         for(IndexIterator iter2 = begin(); iter2 <= iter1; ++iter2) {
@@ -82,13 +89,8 @@ void local::QuasarCorrelationData::fixCovariance(double ll0, double c0, double c
             getBinIndices(i2,bin);
             if(bin[1] != sepIndex || bin[2] != zIndex) continue;
             // Calculate (ll1 - ll0)*(ll2 - ll0) using cached values.
-            double d = dll[i1]*dll[i2];
-            // Update the covariance for (i1,i2)
-            // magic constants are set by the requirement that for
-            // a certain cov, you should add something that is "large"
-            // but at the same time does not make numerical errors unbearable
             double C(getCovariance(i1,i2));
-            C += c0 + c1*d + c2*d*d;
+            C += c * (1.0 + _pkmarg(0.0,k1,dll[i1], dll[i2]) + _pkmarg(k1,k2, dll[i1],dll[i2]));
             setCovariance(i1,i2,C);
         }
     }

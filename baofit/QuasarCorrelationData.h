@@ -30,13 +30,14 @@ namespace baofit {
         // the line of sight (aka mu) associated with the specified global index.
         virtual double getCosAngle(int index) const;
         // Returns the redshift associated with the specified global index.
-	    virtual double getRedshift(int index) const;
+	virtual double getRedshift(int index) const;
     	// This fixes covariance by adding the correct terms for a typical BAO analysis
-    	// that throw away unwanted modes spuriosly appearing (for not yet completelly understood
+    	// that throw away unwanted modes spuriosly appearing
+	// (for not yet completelly understood
     	// reasons). The covariance between bins at the same redshift and separation, and
-    	// log-lambda values ll1,ll2 is increased by c0 + c1*d + c2*d*d where
-    	// d = (ll1 - ll0)*(ll2 - ll0).
-    	void fixCovariance(double ll0=0.02, double c0=0.001, double c1=0.01, double c2=100);
+    	// log-lambda values ll1,ll2 is increased by a k=0 power and flat power bins in k:
+	// (0,k1) and (k1,k2)
+	void fixCovariance(double k1=150., double k2=300., double c=1e-3);
         // Finalize a quasar dataset by pruning to the limits specified in our constructor, optionally
         // fixing covariance and tabulating the co-moving coordinates at the center of each remaining
         // bin with data.
@@ -47,6 +48,8 @@ namespace baofit {
         void transform(double ll, double sep, double dsep, double z, double &r, double &mu) const;
 	private:
         void _initialize(double llmin, bool fixCov, cosmo::AbsHomogeneousUniversePtr cosmology);
+	// This produces contribution to the 1D xi from a power spectrum bin between kmin and kmax. 
+	double _pkmarg(double kmin, double kmax, double l1, double l2);
         double _llmin;
     	bool _fixCov;
         cosmo::AbsHomogeneousUniversePtr _cosmology;
